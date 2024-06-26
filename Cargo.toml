@@ -1,0 +1,43 @@
+[package]
+name = "slcan_fd"
+version = "0.1.4"
+edition = "2021"
+description = "Serial-line CAN bus (slcan) interface with support for CAN FD"
+authors = ["Adrian Wowk <adrian@adom.inc>"]
+license = "MIT"
+
+homepage = "https://github.com/adom-inc/slcan_fd"
+repository = "https://github.com/adom-inc/slcan_fd.git"
+readme = "README.md"
+keywords = ["can", "slcan", "can fd", "fd", "slcan_fd", "canable", "canable2"]
+
+[dependencies]
+
+# Shared
+embedded-can = "0.4.1"
+heapless = "0.8.0"
+num_enum = "0.7.2"
+thiserror = "1.0.61"
+
+# Sync
+serialport = { version = "4.3.0", optional = true }
+
+# Tokio
+tokio-serial = { version = "5.4.4", optional = true }
+tokio = { version = "1.38.0", optional = true, features = ["io-util"] }
+
+[features]
+default = ["tokio"]
+sync = ["dep:serialport"]
+tokio = ["dep:tokio", "dep:tokio-serial"]
+
+[dev-dependencies]
+tokio = { version = "1.38.0", features = ["macros", "rt-multi-thread"] }
+
+[[example]]
+name = "sync_unix_tty"
+required-features = ["sync"]
+
+[[example]]
+name = "tokio_unix_tty"
+required-features = ["tokio"]
