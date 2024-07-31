@@ -158,7 +158,7 @@ pub fn parse_frame_from_bytes(buffer: &[u8]) -> Result<CanFrame, MessageParseErr
             let data_bytes = &message_data[4..];
 
             let id = standard_id_from_hex(id_bytes.try_into().unwrap())?;
-            let dlc = dec_digit_to_u8(dlc_byte)?;
+            let dlc = hex_digit_to_u8(dlc_byte)?;
             let data = unpack_data_bytes(data_bytes, dlc)?;
 
             CanFdFrame::new(id, &data[..dlc as usize])
@@ -172,7 +172,7 @@ pub fn parse_frame_from_bytes(buffer: &[u8]) -> Result<CanFrame, MessageParseErr
             let data_bytes = &message_data[9..];
 
             let id = extended_id_from_hex(id_bytes.try_into().unwrap())?;
-            let dlc = dec_digit_to_u8(dlc_byte)?;
+            let dlc = hex_digit_to_u8(dlc_byte)?;
             let data = unpack_data_bytes(data_bytes, dlc)?;
 
             CanFdFrame::new(id, &data[..dlc as usize])
@@ -186,7 +186,7 @@ pub fn parse_frame_from_bytes(buffer: &[u8]) -> Result<CanFrame, MessageParseErr
             let data_bytes = &message_data[4..];
 
             let id = standard_id_from_hex(id_bytes.try_into().unwrap())?;
-            let dlc = dec_digit_to_u8(dlc_byte)?;
+            let dlc = hex_digit_to_u8(dlc_byte)?;
             let data = unpack_data_bytes(data_bytes, dlc)?;
 
             CanFdFrame::new(id, &data[..dlc as usize]).unwrap().into()
@@ -197,7 +197,7 @@ pub fn parse_frame_from_bytes(buffer: &[u8]) -> Result<CanFrame, MessageParseErr
             let data_bytes = &message_data[9..];
 
             let id = extended_id_from_hex(id_bytes.try_into().unwrap())?;
-            let dlc = dec_digit_to_u8(dlc_byte)?;
+            let dlc = hex_digit_to_u8(dlc_byte)?;
             let data = unpack_data_bytes(data_bytes, dlc)?;
 
             CanFdFrame::new(id, &data[..dlc as usize]).unwrap().into()
