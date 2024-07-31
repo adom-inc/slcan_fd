@@ -265,7 +265,7 @@ fn unpack_data_bytes(
     }
 
     // Make sure the data length matches the DLC
-    if hex_bytes.len() != expected_length as usize {
+    if hex_bytes.len() / 2 != expected_length as usize {
         return Err(MessageParseError::MismatchedDataLength(
             expected_length,
             hex_bytes.len() / 2,
