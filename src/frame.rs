@@ -166,13 +166,7 @@ impl CanFdFrame {
     /// Creates a new CAN FD frame. Will return `None` if the data is not one
     /// of the allowed DLC values for CAN FD.
     pub fn new(id: impl Into<Id>, data: &[u8]) -> Option<Self> {
-        if data.len() > 64 {
-            return None;
-        }
-
-        if FdDataLengthCode::try_from(data.len() as u8).is_err() {
-            return None;
-        }
+        FdDataLengthCode::for_length(data.len())?;
 
         Some(Self {
             id: id.into(),
