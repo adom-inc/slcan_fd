@@ -209,7 +209,7 @@ fn hex_digit_to_u8(byte: u8) -> Result<u8, MessageParseError> {
     Ok(match byte {
         b'0'..=b'9' => byte - b'0',
         b'a'..=b'f' => byte - b'a' + 10,
-        b'A'..=b'A' => byte - b'A' + 10,
+        b'A'..=b'F' => byte - b'A' + 10,
         _ => return Err(MessageParseError::IllegalHexDigit(byte)),
     })
 }
