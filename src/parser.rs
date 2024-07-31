@@ -6,7 +6,7 @@ use crate::{
     Can2Frame,
 };
 
-const MAX_DATA_LENGTH: usize = 8;
+const MAX_DATA_LENGTH: usize = 64;
 
 /// Various errors which can arise while parsing an SLCAN message
 #[derive(Debug, thiserror::Error)]
@@ -61,27 +61,27 @@ pub enum MessageKind {
 impl MessageKind {
     fn get_min_data_length(&self) -> usize {
         match self {
-            MessageKind::ReceivedStandardDataFrame => 4,
-            MessageKind::ReceivedExtendedDataFrame => 9,
-            MessageKind::ReceivedStandardRemoteFrame => 4,
-            MessageKind::ReceivedExtendedRemoteFrame => 9,
-            MessageKind::ReceivedStandardFdFrameNoBrs => 4,
-            MessageKind::ReceivedExtendedFdFrameNoBrs => 9,
-            MessageKind::ReceivedStandardFdFrameWithBrs => 4,
-            MessageKind::ReceivedExtendedFdFrameWithBrs => 9,
+            MessageKind::ReceivedStandardDataFrame => 3 + 1, // (standard id + dlc)
+            MessageKind::ReceivedExtendedDataFrame => 8 + 1, // (extended id + dlc)
+            MessageKind::ReceivedStandardRemoteFrame => 3 + 1, // (standard id + dlc)
+            MessageKind::ReceivedExtendedRemoteFrame => 8 + 1, // (extended id + dlc)
+            MessageKind::ReceivedStandardFdFrameNoBrs => 3 + 1, // (standard id + dlc)
+            MessageKind::ReceivedExtendedFdFrameNoBrs => 8 + 1, // (extended id + dlc)
+            MessageKind::ReceivedStandardFdFrameWithBrs => 3 + 1, // (standard id + dlc)
+            MessageKind::ReceivedExtendedFdFrameWithBrs => 8 + 1, // (extended id + dlc)
         }
     }
 
     fn get_max_data_length(&self) -> usize {
         match self {
-            MessageKind::ReceivedStandardDataFrame => 20,
-            MessageKind::ReceivedExtendedDataFrame => 25,
-            MessageKind::ReceivedStandardRemoteFrame => 4,
-            MessageKind::ReceivedExtendedRemoteFrame => 9,
-            MessageKind::ReceivedStandardFdFrameNoBrs => 20,
-            MessageKind::ReceivedExtendedFdFrameNoBrs => 25,
-            MessageKind::ReceivedStandardFdFrameWithBrs => 20,
-            MessageKind::ReceivedExtendedFdFrameWithBrs => 25,
+            MessageKind::ReceivedStandardDataFrame => 3 + 1 + 16, // (standard id + dlc + data)
+            MessageKind::ReceivedExtendedDataFrame => 8 + 1 + 16, // (extended id + dlc + data)
+            MessageKind::ReceivedStandardRemoteFrame => 3 + 1,    // (standard id + dlc)
+            MessageKind::ReceivedExtendedRemoteFrame => 8 + 1,    // (extended id + dlc)
+            MessageKind::ReceivedStandardFdFrameNoBrs => 3 + 1 + 128, // (standard id + dlc + data)
+            MessageKind::ReceivedExtendedFdFrameNoBrs => 8 + 1 + 128, // (extended id + dlc + data)
+            MessageKind::ReceivedStandardFdFrameWithBrs => 3 + 1 + 128, // (standard id + dlc + data)
+            MessageKind::ReceivedExtendedFdFrameWithBrs => 8 + 1 + 128, // (extended id + dlc + data)
         }
     }
 }
