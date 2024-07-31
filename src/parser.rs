@@ -2,7 +2,7 @@ use embedded_can::{ExtendedId, StandardId};
 use num_enum::TryFromPrimitive;
 
 use crate::{
-    frame::{CanFdFrame, CanFrame},
+    frame::{CanFdFrame, CanFrame, FdDataLengthCode},
     Can2Frame,
 };
 
@@ -30,7 +30,7 @@ pub enum MessageParseError {
     ExtendedIdOutOfRange(u32),
     #[error("Received encoded data with a length ({0:?}) that was not a multiple of 2")]
     InvalidDataLength(u8),
-    #[error("Received a message with DLC ({0:?}) but ({1:?}) bytes of data")]
+    #[error("Received a message with expected length ({0:?}) but ({1:?}) bytes of data")]
     MismatchedDataLength(u8, usize),
 }
 
@@ -158,10 +158,10 @@ pub fn parse_frame_from_bytes(buffer: &[u8]) -> Result<CanFrame, MessageParseErr
             let data_bytes = &message_data[4..];
 
             let id = standard_id_from_hex(id_bytes.try_into().unwrap())?;
-            let dlc = hex_digit_to_u8(dlc_byte)?;
-            let data = unpack_data_bytes(data_bytes, dlc)?;
+            let dlc = FdDataLengthCode::try_from(hex_digit_to_u8(dlc_byte)?).unwrap();
+            let data = unpack_data_bytes(data_bytes, dlc.get_num_bytes() as u8)?;
 
-            CanFdFrame::new(id, &data[..dlc as usize])
+            CanFdFrame::new(id, &data[..dlc.get_num_bytes()])
                 .unwrap()
                 .with_bit_rate_switched(false)
                 .into()
@@ -172,10 +172,10 @@ pub fn parse_frame_from_bytes(buffer: &[u8]) -> Result<CanFrame, MessageParseErr
             let data_bytes = &message_data[9..];
 
             let id = extended_id_from_hex(id_bytes.try_into().unwrap())?;
-            let dlc = hex_digit_to_u8(dlc_byte)?;
-            let data = unpack_data_bytes(data_bytes, dlc)?;
+            let dlc = FdDataLengthCode::try_from(hex_digit_to_u8(dlc_byte)?).unwrap();
+            let data = unpack_data_bytes(data_bytes, dlc.get_num_bytes() as u8)?;
 
-            CanFdFrame::new(id, &data[..dlc as usize])
+            CanFdFrame::new(id, &data[..dlc.get_num_bytes()])
                 .unwrap()
                 .with_bit_rate_switched(false)
                 .into()
@@ -186,10 +186,12 @@ pub fn parse_frame_from_bytes(buffer: &[u8]) -> Result<CanFrame, MessageParseErr
             let data_bytes = &message_data[4..];
 
             let id = standard_id_from_hex(id_bytes.try_into().unwrap())?;
-            let dlc = hex_digit_to_u8(dlc_byte)?;
-            let data = unpack_data_bytes(data_bytes, dlc)?;
+            let dlc = FdDataLengthCode::try_from(hex_digit_to_u8(dlc_byte)?).unwrap();
+            let data = unpack_data_bytes(data_bytes, dlc.get_num_bytes() as u8)?;
 
-            CanFdFrame::new(id, &data[..dlc as usize]).unwrap().into()
+            CanFdFrame::new(id, &data[..dlc.get_num_bytes()])
+                .unwrap()
+                .into()
         }
         MessageKind::ReceivedExtendedFdFrameWithBrs => {
             let id_bytes = &message_data[..8];
@@ -197,10 +199,12 @@ pub fn parse_frame_from_bytes(buffer: &[u8]) -> Result<CanFrame, MessageParseErr
             let data_bytes = &message_data[9..];
 
             let id = extended_id_from_hex(id_bytes.try_into().unwrap())?;
-            let dlc = hex_digit_to_u8(dlc_byte)?;
-            let data = unpack_data_bytes(data_bytes, dlc)?;
+            let dlc = FdDataLengthCode::try_from(hex_digit_to_u8(dlc_byte)?).unwrap();
+            let data = unpack_data_bytes(data_bytes, dlc.get_num_bytes() as u8)?;
 
-            CanFdFrame::new(id, &data[..dlc as usize]).unwrap().into()
+            CanFdFrame::new(id, &data[..dlc.get_num_bytes()])
+                .unwrap()
+                .into()
         }
     })
 }
@@ -253,7 +257,7 @@ fn extended_id_from_hex(hex_nibbles: &[u8; 8]) -> Result<ExtendedId, MessagePars
 
 fn unpack_data_bytes(
     hex_bytes: &[u8],
-    dlc: u8,
+    expected_length: u8,
 ) -> Result<[u8; MAX_DATA_LENGTH], MessageParseError> {
     // Make sure data is multiple of 2 (otherwise we can't parse the hex digits)
     if hex_bytes.len() % 2 != 0 {
@@ -261,9 +265,9 @@ fn unpack_data_bytes(
     }
 
     // Make sure the data length matches the DLC
-    if hex_bytes.len() != dlc as usize {
+    if hex_bytes.len() != expected_length as usize {
         return Err(MessageParseError::MismatchedDataLength(
-            dlc,
+            expected_length,
             hex_bytes.len() / 2,
         ));
     }
