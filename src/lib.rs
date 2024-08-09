@@ -73,11 +73,9 @@ pub mod sync {
     //! The synchronous implementation of CanSocket for use with the
     //! [serialport] crate.
 
-    use std::io;
+    use std::io::{self, Read, Write};
     #[cfg(target_family = "unix")]
     use std::os::unix::prelude::AsRawFd;
-
-    use serialport::SerialPort;
 
     use crate::{
         command::{AutoRetransmissionMode, Command, DataBitRate, OperatingMode},
@@ -92,28 +90,25 @@ pub mod sync {
     /// Messages can be sent over the bus through the gateway, and messages
     /// broadcasted on the bus by other nodes can be received through the
     /// gateway.
-    pub struct CanSocket<P: SerialPort> {
-        port: P,
+    pub struct CanSocket<P> {
+        port: Box<P>,
         rx_buff: [u8; SLCAN_MTU],
         rx_count: usize,
         error: bool,
     }
 
     #[cfg(target_family = "unix")]
-    impl<P> AsRawFd for CanSocket<P>
-    where
-        P: SerialPort + AsRawFd,
-    {
+    impl<P: AsRawFd> AsRawFd for CanSocket<P> {
         fn as_raw_fd(&self) -> std::os::unix::prelude::RawFd {
             self.port.as_raw_fd()
         }
     }
 
-    impl<P: SerialPort> CanSocket<P> {
+    impl<P: Read + Write> CanSocket<P> {
         /// Constructs a new CanSocket from a generic serial port
         pub fn new(port: P) -> Self {
             CanSocket {
-                port,
+                port: Box::new(port),
                 rx_buff: [0; SLCAN_MTU],
                 rx_count: 0,
                 error: false,
@@ -255,10 +250,12 @@ pub mod tokio {
     use std::io;
     #[cfg(target_family = "unix")]
     use std::os::unix::prelude::AsRawFd;
+    use std::pin::Pin;
 
+    use tokio::io::AsyncRead;
     use tokio::io::AsyncReadExt;
+    use tokio::io::AsyncWrite;
     use tokio::io::AsyncWriteExt;
-    use tokio_serial::SerialStream;
 
     use crate::parser::parse_frame_from_bytes;
     use crate::{
@@ -273,25 +270,25 @@ pub mod tokio {
     /// Messages can be sent over the bus through the gateway, and messages
     /// broadcasted on the bus by other nodes can be received through the
     /// gateway.
-    pub struct CanSocket {
-        port: SerialStream,
+    pub struct CanSocket<P> {
+        port: Pin<Box<P>>,
         rx_buff: [u8; SLCAN_MTU],
         rx_count: usize,
         error: bool,
     }
 
     #[cfg(target_family = "unix")]
-    impl AsRawFd for CanSocket {
+    impl<P: AsRawFd> AsRawFd for CanSocket<P> {
         fn as_raw_fd(&self) -> std::os::unix::prelude::RawFd {
             self.port.as_raw_fd()
         }
     }
 
-    impl CanSocket {
+    impl<P: AsyncRead + AsyncWrite> CanSocket<P> {
         /// Constructs a new CanSocket from an async SerialStream
-        pub fn new(port: SerialStream) -> Self {
+        pub fn new(port: P) -> Self {
             CanSocket {
-                port,
+                port: Box::pin(port),
                 rx_buff: [0; SLCAN_MTU],
                 rx_count: 0,
                 error: false,
