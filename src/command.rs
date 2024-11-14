@@ -194,7 +194,7 @@ impl Command {
                         }
                     }
 
-                    result.push(to_hex_digit(frame.dlc().get_num_bytes() as u32));
+                    result.push(to_hex_digit(frame.dlc() as u32));
                     result.extend(bytes_to_hex(frame.data()));
                 }
             },
