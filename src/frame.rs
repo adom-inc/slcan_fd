@@ -198,7 +198,7 @@ impl CanFdFrame {
 
     /// Gets the DLC (Data Length Code) of the frame
     pub fn dlc(&self) -> FdDataLengthCode {
-        (self.data.len() as u8).try_into().unwrap()
+        FdDataLengthCode::for_length(self.data.len()).unwrap()
     }
 
     /// Gets the data associated with the frame (length will match DLC)
